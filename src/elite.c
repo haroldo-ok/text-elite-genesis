@@ -662,7 +662,7 @@ static void draw_market(void)
         draw(10,23,"   ");
     }
 
-    draw(0, 24, "U/D=item L/R=qty A=buy B=sell");
+    draw(0, 24, "U/D=item L/R=qty A=buy B=sell X=help");
     /* msg */
     if(msg[0]) draw(0,25,msg);
 }
