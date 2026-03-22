@@ -1,4 +1,8 @@
-# Text Elite 1.5 – Sega Genesis / Mega Drive Port
+# Text Elite Genesis
+
+Sega Genesis / Mega Drive Port of Text Elite, using Claude to automate the inictial steps.
+Based on Text Elite 1.5.
+
 ## Built with SGDK 1.70
 
 Original Text Elite by **Ian Bell** (www.ianbellelite.com), from his 6502
