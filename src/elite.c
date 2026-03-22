@@ -471,13 +471,37 @@ static void draw(int col, int row, const char *s)
     VDP_drawText(s, col, row);
 }
 
-/* Draw highlighted text */
-/* SGDK text uses PAL0 by default.  We mark high text by prefixing a
-   colour-attribute change via VDP_setTextPalette.  Because this is
-   global we switch before/after. */
+/* Draw gold/title text (PAL1) */
 static void draw_hi(int col, int row, const char *s)
 {
     VDP_setTextPalette(PAL1);
+    VDP_drawText(s, col, row);
+    VDP_setTextPalette(PAL0);
+}
+
+/* Draw cyan text – data values (PAL2) */
+static void draw_cy(int col, int row, const char *s)
+{
+    VDP_setTextPalette(PAL2);
+    VDP_drawText(s, col, row);
+    VDP_setTextPalette(PAL0);
+}
+
+/* Draw alert/red text – messages, cursor (PAL3) */
+static void draw_al(int col, int row, const char *s)
+{
+    VDP_setTextPalette(PAL3);
+    VDP_drawText(s, col, row);
+    VDP_setTextPalette(PAL0);
+}
+
+/* Draw a right-aligned string, colour pal (PAL0-3) */
+static void draw_r_pal(int right_col, int row, const char *s, int pal)
+{
+    int len=e_strlen(s);
+    int col=right_col-len;
+    if(col<0) col=0;
+    VDP_setTextPalette(pal);
     VDP_drawText(s, col, row);
     VDP_setTextPalette(PAL0);
 }
@@ -524,39 +548,40 @@ static void build_local_list(void)
 static void draw_header(void)
 {
     char buf[64];
-    /* Planet name centred */
-    int nlen=e_strlen(galaxy[currentplanet].name);
-    draw(20-nlen/2, 0, galaxy[currentplanet].name);
+    char line[41];
+    int nlen, j;
 
-    /* Cash */
-    e_strcpy(buf,"CR:");
-    cash2str(cash, buf+3);
-    draw(0,0,buf);
+    /* Planet name centred – gold */
+    nlen=e_strlen(galaxy[currentplanet].name);
+    draw_hi(20-nlen/2, 0, galaxy[currentplanet].name);
 
-    /* Fuel */
-    e_strcpy(buf,"Fuel:");
-    tenths2str(fuel, buf+5);
-    draw(27,0,buf);
+    /* Cash label green, value cyan */
+    draw(0,0,"CR:");
+    cash2str(cash, buf);
+    draw_cy(3,0,buf);
 
-    /* Galaxy */
+    /* Fuel label green, value cyan */
+    draw(27,0,"Fu:");
+    tenths2str(fuel, buf);
+    draw_cy(30,0,buf);
+
+    /* Galaxy number – cyan */
     buf[0]='G'; buf[1]='x'; buf[2]='0'+galaxynum; buf[3]=0;
-    draw(37,0,buf);
+    draw_cy(37,0,buf);
 
-    /* Separator */
-    {
-        char line[41];
-        int j; for(j=0;j<40;j++) line[j]='-'; line[40]=0;
-        draw(0,1,line);
-    }
+    /* Separator – dim (normal palette, looks like a rule) */
+    for(j=0;j<40;j++) line[j]='-';
+    line[40]=0;
+    draw(0,1,line);
 }
 
 /* ── TITLE ─────────────────────────────────────────────────────────────── */
 static void draw_title(void)
 {
     draw_hi(11, 4, "TEXT  ELITE  1.5");
-    draw(2,  6, "Genesis Port (Bell/Braben)");
+    draw_cy(8,  6, "Genesis Port (Bell/Braben)");
     draw(10, 8, "B/A = select    START = ok");
-    draw(6, 10, "You begin at Lave with 100.0 CR");
+    draw_cy(3, 10, "You begin at Lave with 100.0 CR");
     draw(3, 12, "Press START to start trading");
 }
 
@@ -573,27 +598,28 @@ static void draw_status(void)
     row=2;
 
     draw_hi(0, row, "STATUS"); row+=2;
-    draw(0,row,"Planet : "); draw(9,row,p->name); row++;
-    draw(0,row,"Economy: "); draw(9,row,econnames[p->economy]); row++;
-    draw(0,row,"Govt   : "); draw(9,row,govnames[p->govtype]); row++;
+    /* labels green, values cyan */
+    draw(0,row,"Planet : "); draw_cy(9,row,p->name); row++;
+    draw(0,row,"Economy: "); draw_cy(9,row,econnames[p->economy]); row++;
+    draw(0,row,"Govt   : "); draw_cy(9,row,govnames[p->govtype]); row++;
 
-    e_strcpy(buf,"Tech   : ");
-    uint2str(p->techlev+1, buf+9);
-    draw(0,row,buf); row++;
+    draw(0,row,"Tech   : ");
+    uint2str(p->techlev+1, buf);
+    draw_cy(9,row,buf); row++;
 
-    e_strcpy(buf,"Pop    : ");
-    uint2str(p->population>>3, buf+9);
+    draw(0,row,"Pop    : ");
+    uint2str(p->population>>3, buf);
     e_strcpy(buf+e_strlen(buf)," Billion");
-    draw(0,row,buf); row++;
+    draw_cy(9,row,buf); row++;
 
-    e_strcpy(buf,"Turnov : ");
-    uint2str(p->productivity, buf+9);
-    draw(0,row,buf); row++;
+    draw(0,row,"Turnov : ");
+    uint2str(p->productivity, buf);
+    draw_cy(9,row,buf); row++;
 
-    /* Description */
+    /* Description – gold label, green body */
     make_description(p, desc);
     r=row+1;
-    draw(0,row,"Desc:");
+    draw_hi(0,row,"Desc:");
     dlen=e_strlen(desc); di=0;
     while(di<dlen && r<27){
         end=di+38; if(end>dlen) end=dlen;
@@ -607,13 +633,13 @@ static void draw_status(void)
         draw(0, r++, tmp);
     }
 
-    /* Cargo */
+    /* Cargo – label green, value cyan */
     row=r+1;
     if(row<26){
-        e_strcpy(buf,"Cargo: ");
-        uint2str(holdspace, buf+7);
+        draw(0,row,"Cargo: ");
+        uint2str(holdspace, buf);
         e_strcpy(buf+e_strlen(buf),"t free");
-        draw(0,row,buf);
+        draw_cy(7,row,buf);
     }
 }
 
@@ -630,41 +656,48 @@ static void draw_market(void)
 
     for(i=0;i<=lasttrade;i++){
         row=5+i;
-        /* Highlight selected row */
+        /* cursor marker red, blank otherwise */
         if(i==cursor){
-            /* draw a '>' marker */
-            draw(0, row, ">");
+            draw_al(0, row, ">");
         } else {
             draw(0, row, " ");
         }
-        draw(1, row, commodities[i].name);      /* 12 chars */
+        /* commodity name: cyan if selected, green otherwise */
+        if(i==cursor){
+            draw_cy(1, row, commodities[i].name);
+        } else {
+            draw(1, row, commodities[i].name);
+        }
 
-        /* price in tenths */
+        /* price – cyan */
         tenths2str(localmarket.price[i], buf);
-        draw_r(20, row, buf, 6);
+        draw_r_pal(20, row, buf, PAL2);
 
-        /* availability */
+        /* availability – cyan */
         uint2str(localmarket.quantity[i], buf);
         e_strcpy(buf+e_strlen(buf), unitnames[commodities[i].units]);
-        draw_r(27, row, buf, 6);
+        draw_r_pal(27, row, buf, PAL2);
 
-        /* in hold */
+        /* in hold – gold if non-zero, dim green if zero */
         uint2str(shipshold[i], buf);
-        draw_r(33, row, buf, 4);
+        if(shipshold[i]>0)
+            draw_r_pal(33, row, buf, PAL1);
+        else
+            draw_r(33, row, buf, 4);
     }
 
-    /* Amount selector */
+    /* Amount selector – label green, value cyan */
     {
         char abuf[8];
         uint2str((uint)trade_amount, abuf);
-        draw(0, 23, "Amount: ");
-        draw(8, 23, abuf);
+        draw(0, 23, "Amount:");
+        draw_cy(8, 23, abuf);
         draw(10,23,"   ");
     }
 
     draw(0, 24, "U/D=item L/R=qty A=buy B=sell X=help");
-    /* msg */
-    if(msg[0]) draw(0,25,msg);
+    /* msg – red/alert */
+    if(msg[0]) draw_al(0,25,msg);
 }
 
 /* ── LOCAL MAP ──────────────────────────────────────────────────────────── */
@@ -682,17 +715,21 @@ static void draw_local(void)
         row=5+i;
         p=&galaxy[local_list[i]];
 
-        if(i==cursor) draw(0,row,">"); else draw(0,row," ");
-        draw(1, row, p->name);
+        /* cursor red, planet name cyan if selected else green */
+        if(i==cursor) draw_al(0,row,">"); else draw(0,row," ");
+        if(i==cursor) draw_cy(1,row,p->name); else draw(1,row,p->name);
+        /* tech level green */
         uint2str(p->techlev+1, buf);
         draw(17, row, buf);
+        /* economy green */
         draw(20, row, econnames[p->economy]);
+        /* distance cyan */
         { uint dd=distance(*p, galaxy[currentplanet]);
         tenths2str(dd, buf); }
-        draw(35, row, buf);
+        draw_cy(35, row, buf);
     }
     draw(0,26,"A=jump here   B/START=back");
-    if(msg[0]) draw(0,27,msg);
+    if(msg[0]) draw_al(0,27,msg);
 }
 
 /* ── INFO ───────────────────────────────────────────────────────────────── */
@@ -704,19 +741,26 @@ static void draw_info(void)
     plansys *p;
     int row, dlen, di, end, br, ti;
 
-    if(local_count==0){ draw(0,12,"No reachable systems"); return; }
+    if(local_count==0){ draw_al(0,12,"No reachable systems"); return; }
     p=&galaxy[local_list[cursor % local_count]];
     row=2;
     draw_hi(0,row,"SYSTEM INFO"); row+=2;
-    draw(0,row,p->name); row++;
+    /* Planet name gold */
+    draw_hi(0,row,p->name); row++;
+    /* economy/govt green */
     draw(0,row,econnames[p->economy]); row++;
     draw(0,row,govnames[p->govtype]); row++;
-    e_strcpy(buf,"Tech: "); uint2str(p->techlev+1, buf+6);
-    draw(0,row,buf); row++;
-    e_strcpy(buf,"Pop : "); uint2str(p->population>>3, buf+6);
+    /* label green, value cyan */
+    draw(0,row,"Tech: ");
+    uint2str(p->techlev+1, buf);
+    draw_cy(6,row,buf); row++;
+    draw(0,row,"Pop : ");
+    uint2str(p->population>>3, buf);
     e_strcpy(buf+e_strlen(buf),"B");
-    draw(0,row,buf); row+=2;
+    draw_cy(6,row,buf); row+=2;
 
+    /* description label gold, body green */
+    draw_hi(0,row,"Description:"); row++;
     make_description(p, desc);
     dlen=e_strlen(desc); di=0;
     while(di<dlen && row<26){
@@ -738,19 +782,19 @@ static void draw_help(void)
 {
     int r=4;
     draw_hi(0,2,"CONTROLS");
-    draw(0,r++,"Market screen:");
+    draw_cy(0,r++,"Market screen:");
     draw(2,r++,"UP/DOWN  - select commodity");
     draw(2,r++,"LEFT/RIGHT - change buy amount");
     draw(2,r++,"A - buy  |  B - sell");
     draw(2,r++,"C - status screen");
     r++;
-    draw(0,r++,"Local screen  (UP from market):");
+    draw_cy(0,r++,"Local screen (Y from market):");
     draw(2,r++,"UP/DOWN - select destination");
     draw(2,r++,"A - jump to system");
     draw(2,r++,"START - galactic hyperspace");
     r++;
-    draw(0,r++,"X - this help screen");
-    draw(0,r++,"Y - system info");
+    draw(2,r++,"X - this help screen");
+    draw(2,r++,"Y - system info");
     draw(0,27,"B/START = back");
 }
 
