@@ -6,44 +6,88 @@
 #include "elite.h"
 
 /* ── Palette ─────────────────────────────────────────────────────────────── */
-/* PAL0: normal text – dark background, light green text (classic terminal) */
+/* SGDK system font: foreground pixels use colour index 15 of the active palette.
+   Index 0 = background (transparent). Other indices unused by font tiles.
+   Each palette only needs [0]=background and [15]=text colour.            */
+
+/* PAL0: green – body text, labels, separators */
 static const u16 pal_normal[16] = {
-    RGB24_TO_VDPCOLOR(0x000000),  /*  0 – transparent / black bg */
-    RGB24_TO_VDPCOLOR(0x00CC44),  /*  1 – green  (text fg)       */
-    RGB24_TO_VDPCOLOR(0x004400),  /*  2 – dark green             */
-    RGB24_TO_VDPCOLOR(0x00FF88),  /*  3 – bright green           */
-    RGB24_TO_VDPCOLOR(0xFFFFFF),  /*  4 – white                  */
-    RGB24_TO_VDPCOLOR(0xCCCCCC),  /*  5 – light grey             */
-    RGB24_TO_VDPCOLOR(0x888888),  /*  6 – mid grey               */
-    RGB24_TO_VDPCOLOR(0x444444),  /*  7 – dark grey              */
-    RGB24_TO_VDPCOLOR(0xFFFF00),  /*  8 – yellow                 */
-    RGB24_TO_VDPCOLOR(0xFF8800),  /*  9 – orange                 */
-    RGB24_TO_VDPCOLOR(0xFF0000),  /* 10 – red                    */
-    RGB24_TO_VDPCOLOR(0x0088FF),  /* 11 – blue                   */
-    RGB24_TO_VDPCOLOR(0x00FFFF),  /* 12 – cyan                   */
-    RGB24_TO_VDPCOLOR(0xFF00FF),  /* 13 – magenta                */
-    RGB24_TO_VDPCOLOR(0x884400),  /* 14 – brown                  */
-    RGB24_TO_VDPCOLOR(0x002200),  /* 15 – very dark green        */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  0 – background black       */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  1                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  2                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  3                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  4                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  5                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  6                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  7                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  8                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  9                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 10                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 11                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 12                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 13                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 14                          */
+    RGB24_TO_VDPCOLOR(0x00CC44),  /* 15 – FONT COLOUR: green     */
 };
 
-/* PAL1: highlighted text – amber / gold on dark */
+/* PAL1: gold – screen titles, planet names, section headers */
 static const u16 pal_hi[16] = {
-    RGB24_TO_VDPCOLOR(0x000000),  /*  0 – transparent            */
-    RGB24_TO_VDPCOLOR(0xFFCC00),  /*  1 – gold  (hi text)        */
-    RGB24_TO_VDPCOLOR(0xFF8800),  /*  2 – orange                 */
-    RGB24_TO_VDPCOLOR(0xFFFF88),  /*  3 – pale yellow            */
-    RGB24_TO_VDPCOLOR(0xFFFFFF),  /*  4 – white                  */
-    RGB24_TO_VDPCOLOR(0xCCCCCC),  /*  5 */
-    RGB24_TO_VDPCOLOR(0x888888),  /*  6 */
-    RGB24_TO_VDPCOLOR(0x444444),  /*  7 */
-    RGB24_TO_VDPCOLOR(0x00FF00),  /*  8 */
-    RGB24_TO_VDPCOLOR(0x00CC44),  /*  9 */
-    RGB24_TO_VDPCOLOR(0xFF0000),  /* 10 */
-    RGB24_TO_VDPCOLOR(0x0088FF),  /* 11 */
-    RGB24_TO_VDPCOLOR(0x00FFFF),  /* 12 */
-    RGB24_TO_VDPCOLOR(0xFF00FF),  /* 13 */
-    RGB24_TO_VDPCOLOR(0x884400),  /* 14 */
-    RGB24_TO_VDPCOLOR(0x002200),  /* 15 */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  0 – background             */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  1                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  2                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  3                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  4                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  5                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  6                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  7                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  8                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  9                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 10                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 11                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 12                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 13                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 14                          */
+    RGB24_TO_VDPCOLOR(0xFFCC00),  /* 15 – FONT COLOUR: gold      */
+};
+
+/* PAL2: cyan – data values: prices, quantities, distances, cash, fuel */
+static const u16 pal_cyan[16] = {
+    RGB24_TO_VDPCOLOR(0x000000),  /*  0 – background             */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  1                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  2                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  3                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  4                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  5                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  6                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  7                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  8                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  9                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 10                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 11                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 12                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 13                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 14                          */
+    RGB24_TO_VDPCOLOR(0x00EEFF),  /* 15 – FONT COLOUR: cyan      */
+};
+
+/* PAL3: red-orange – cursor marker, status messages, warnings */
+static const u16 pal_alert[16] = {
+    RGB24_TO_VDPCOLOR(0x000000),  /*  0 – background             */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  1                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  2                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  3                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  4                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  5                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  6                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  7                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  8                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /*  9                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 10                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 11                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 12                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 13                          */
+    RGB24_TO_VDPCOLOR(0x000000),  /* 14                          */
+    RGB24_TO_VDPCOLOR(0xFF4400),  /* 15 – FONT COLOUR: red-orange*/
 };
 
 int main(void)
@@ -58,6 +102,8 @@ int main(void)
     /* Load palettes */
     PAL_setPalette(PAL0, pal_normal, CPU);
     PAL_setPalette(PAL1, pal_hi,     CPU);
+    PAL_setPalette(PAL2, pal_cyan,   CPU);
+    PAL_setPalette(PAL3, pal_alert,  CPU);
 
     /* Default text colour (PAL0 pen 1 = green) */
     VDP_setTextPalette(PAL0);
